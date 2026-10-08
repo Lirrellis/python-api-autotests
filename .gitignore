@@ -1,0 +1,18 @@
+# Виртуальное окружение Python
+.venv/
+venv/
+
+# Кеш Python и pytest
+__pycache__/
+.pytest_cache/
+*.pyc
+
+# Настройки PyCharm
+.idea/
+
+# Системные файлы macOS
+.DS_Store
+
+# Секреты и локальные настройки
+.env
+.env.*
