@@ -62,3 +62,36 @@ def test_get_posts_by_user():
         for post in data:
             assert post["userId"] == params["userId"]
 
+def test_get_user_2():
+    response = requests.get(
+        "https://jsonplaceholder.typicode.com/users/2"
+    )
+    data = response.json()
+
+    assert response.status_code == 200
+
+    assert data["id"] == 2
+    assert isinstance(data["email"], str)
+    assert data["email"] != ""
+
+def test_create_post_2():
+    payload = {
+        "title": "Learning Python",
+        "body": "My first API autotests",
+        "userId": 2
+    }
+
+    response = requests.post(
+        "https://jsonplaceholder.typicode.com/posts",
+        json=payload
+    )
+
+    assert response.status_code == 201
+
+    data = response.json()
+
+    assert data["title"] == payload["title"]
+    assert data["body"] == payload["body"]
+    assert data["userId"] == payload["userId"]
+    assert "id" in data
+    assert isinstance(data["id"], int)
