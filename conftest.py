@@ -15,3 +15,7 @@ def api_session():
     yield session
     session.close()
     print("Сессия закрыта")
+
+@pytest.mark.parametrize("number", [1, 2, 3])
+def test_example(number):
+    assert number > 0

@@ -1,5 +1,6 @@
 import requests
 from sklearn.utils._repr_html import params
+import pytest
 
 
 def test_get_user():
@@ -340,3 +341,144 @@ def test_user_required_fields(base_url, api_session):
 
     assert response.status_code == 200
     assert required_fields.issubset(data.keys())
+
+
+def test_user_albums(base_url, api_session):
+    user_id = 2
+    response = api_session.get(f"{base_url}/albums?userId={user_id}")
+    data = response.json()
+
+    assert response.status_code == 200
+    assert isinstance(data, list)
+    assert len(data) > 0
+    for album in data:
+        assert "userId" in album
+        assert album["userId"] == user_id
+        assert "title" in album
+        check_non_empty_string(album["title"])
+
+
+def test_nonexistent_album(base_url, api_session):
+    response = api_session.get(f"{base_url}/albums/999999")
+    data = response.json()
+
+    assert response.status_code == 404
+    assert data == {}
+
+
+@pytest.mark.parametrize("endpoint", ["/users/999999", "/posts/999999", "/albums/999999"])
+def test_nonexistent_resources(base_url, api_session, endpoint):
+    response = api_session.get(f"{base_url}{endpoint}")
+    data = response.json()
+
+    assert response.status_code == 404
+    assert data == {}
+
+@pytest.mark.parametrize("endpoint, expected_result", [
+    ("/users/1", 200),
+    ("/users/999999", 404),
+    ("/posts/5", 200),
+    ("/posts/999999", 404),
+    ],
+    ids=["first", "second", "third", "fourth"]
+)
+def test_resource_status_codes(base_url, api_session, endpoint, expected_result):
+    response = api_session.get(f"{base_url}{endpoint}")
+    data = response.json()
+    assert response.status_code == expected_result
+
+    if expected_result == 200:
+        assert "id" in data
+        parts = endpoint.split("/")
+        num = int(parts[-1])
+        assert data["id"] == num
+
+    elif expected_result == 404:
+        assert data == {}
+
+
+
+@pytest.mark.parametrize("user_id", [1, 3, 5],
+    ids=["user_1", "user_3", "user_5"]
+)
+def test_filter_posts_by_user(base_url, api_session, user_id):
+    response = api_session.get(
+        f"{base_url}/posts",
+        params={"userId": user_id} )
+    data = response.json()
+
+    assert response.status_code == 200
+    assert isinstance(data, list)
+    assert len(data) > 0
+    for post in data:
+        assert "userId" in post
+        assert post["userId"] == user_id
+
+
+def test_posts_sorted_by_id(base_url, api_session):
+    params = {
+        "userId": 1
+    }
+
+    response = api_session.get(f"{base_url}/posts", params=params)
+    data = response.json()
+
+    assert response.status_code == 200
+    assert isinstance(data, list)
+    assert len(data) > 0
+    id_list = []
+
+    for post in data:
+        assert "id" in post
+        id_list.append(post["id"])
+
+    assert sorted(id_list) == id_list
+
+
+def test_posts_have_unique_ids(base_url, api_session):
+    response = api_session.get(f"{base_url}/posts")
+    data = response.json()
+
+    assert response.status_code == 200
+    assert isinstance(data, list)
+    assert len(data) > 0
+    id_list = []
+
+    for post in data:
+        assert "id" in post
+        id_list.append(post["id"])
+
+
+    assert len(id_list) == len(set(id_list))
+
+
+def test_comment_references_existing_post(base_url, api_session):
+    response = api_session.get(f"{base_url}/comments/7")
+    data = response.json()
+
+    assert response.status_code == 200
+    assert "postId" in data
+
+    response2 = api_session.get(f"{base_url}/posts/{data['postId']}")
+    data2 = response2.json()
+    assert response2.status_code == 200
+    assert "id" in data2
+
+    assert data2["id"] == data["postId"]
+
+
+
+def test_create_post_with_empty_title(base_url, api_session):
+    payload = {
+        "title": "",
+        "body": "Some text",
+        "userId": 1
+    }
+    response = api_session.post(f"{base_url}/posts", json=payload)
+    data = response.json()
+
+    assert isinstance(data, dict)
+    print(response.status_code, data)
+    assert "title" in data
+    assert isinstance(data["title"], str)
+    assert data["title"] == ""
