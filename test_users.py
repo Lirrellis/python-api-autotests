@@ -34,9 +34,9 @@ def test_create_post():
         assert data["userId"] == payload["userId"]
         assert data["id"] == 101
 
-def test_get_post(base_url, api_session):
+def test_get_post(api_base_url, api_session):
 
-        response = api_session.get(f"{base_url}/posts/5")
+        response = api_session.get(f"{api_base_url}/posts/5")
 
         data = response.json()
 
@@ -65,9 +65,9 @@ def test_get_posts_by_user():
         for post in data:
             assert post["userId"] == params["userId"]
 
-def test_get_user_2(base_url, api_session):
+def test_get_user_2(api_base_url, api_session):
 
-    response = api_session.get(f"{base_url}/users/2")
+    response = api_session.get(f"{api_base_url}/users/2")
     api_session.headers["X-Test"] = "hello"
     data = response.json()
 
@@ -269,23 +269,23 @@ def test_delete_post():
     assert data == {}
 
 
-def test_get_nonexistent_user(base_url, api_session):
-    response = api_session.get(f"{base_url}/users/999999")
+def test_get_nonexistent_user(api_base_url, api_session):
+    response = api_session.get(f"{api_base_url}/users/999999")
     data = response.json()
 
     assert response.status_code == 404
     assert data == {}
 
-def test_get_nonexistent_post(base_url, api_session):
-    response = api_session.get(f"{base_url}/posts/999999")
+def test_get_nonexistent_post(api_base_url, api_session):
+    response = api_session.get(f"{api_base_url}/posts/999999")
     data = response.json()
 
     assert response.status_code == 404
     assert data == {}
     assert response.elapsed.total_seconds() < 5
 
-def test_posts_belong_to_user(base_url, api_session):
-    response = api_session.get(f"{base_url}/posts?userId=3")
+def test_posts_belong_to_user(api_base_url, api_session):
+    response = api_session.get(f"{api_base_url}/posts?userId=3")
     data = response.json()
 
     assert response.status_code == 200
@@ -297,11 +297,11 @@ def test_posts_belong_to_user(base_url, api_session):
         check_non_empty_string(post["title"])
         check_non_empty_string(post["body"])
 
-def test_comments_match_post(base_url, api_session):
+def test_comments_match_post(api_base_url, api_session):
 
-    response_post = api_session.get(f"{base_url}/posts/5")
+    response_post = api_session.get(f"{api_base_url}/posts/5")
     data1 = response_post.json()
-    response_comment = api_session.get(f"{base_url}/comments?postId={data1['id']}")
+    response_comment = api_session.get(f"{api_base_url}/comments?postId={data1['id']}")
     data2 = response_comment.json()
 
     assert response_post.status_code == 200
@@ -314,13 +314,13 @@ def test_comments_match_post(base_url, api_session):
         assert "postId" in comment
         assert comment["postId"] == data1["id"]
 
-def test_create_post_response(base_url, api_session):
+def test_create_post_response(api_base_url, api_session):
     payload = {
         "title": "API automation practice",
         "body": "Testing POST requests with pytest",
         "userId": 3
     }
-    response = api_session.post(f"{base_url}/posts", json=payload)
+    response = api_session.post(f"{api_base_url}/posts", json=payload)
     data = response.json()
 
     assert response.status_code == 201
@@ -331,8 +331,8 @@ def test_create_post_response(base_url, api_session):
     assert type(data["id"]) is int
 
 
-def test_user_required_fields(base_url, api_session):
-    response = api_session.get(f"{base_url}/users/1")
+def test_user_required_fields(api_base_url, api_session):
+    response = api_session.get(f"{api_base_url}/users/1")
     data = response.json()
     required_fields = {
         "id", "name", "username", "email",
@@ -343,9 +343,9 @@ def test_user_required_fields(base_url, api_session):
     assert required_fields.issubset(data.keys())
 
 
-def test_user_albums(base_url, api_session):
+def test_user_albums(api_base_url, api_session):
     user_id = 2
-    response = api_session.get(f"{base_url}/albums?userId={user_id}")
+    response = api_session.get(f"{api_base_url}/albums?userId={user_id}")
     data = response.json()
 
     assert response.status_code == 200
@@ -358,8 +358,8 @@ def test_user_albums(base_url, api_session):
         check_non_empty_string(album["title"])
 
 
-def test_nonexistent_album(base_url, api_session):
-    response = api_session.get(f"{base_url}/albums/999999")
+def test_nonexistent_album(api_base_url, api_session):
+    response = api_session.get(f"{api_base_url}/albums/999999")
     data = response.json()
 
     assert response.status_code == 404
@@ -367,8 +367,8 @@ def test_nonexistent_album(base_url, api_session):
 
 
 @pytest.mark.parametrize("endpoint", ["/users/999999", "/posts/999999", "/albums/999999"])
-def test_nonexistent_resources(base_url, api_session, endpoint):
-    response = api_session.get(f"{base_url}{endpoint}")
+def test_nonexistent_resources(api_base_url, api_session, endpoint):
+    response = api_session.get(f"{api_base_url}{endpoint}")
     data = response.json()
 
     assert response.status_code == 404
@@ -382,8 +382,8 @@ def test_nonexistent_resources(base_url, api_session, endpoint):
     ],
     ids=["first", "second", "third", "fourth"]
 )
-def test_resource_status_codes(base_url, api_session, endpoint, expected_result):
-    response = api_session.get(f"{base_url}{endpoint}")
+def test_resource_status_codes(api_base_url, api_session, endpoint, expected_result):
+    response = api_session.get(f"{api_base_url}{endpoint}")
     data = response.json()
     assert response.status_code == expected_result
 
@@ -401,9 +401,9 @@ def test_resource_status_codes(base_url, api_session, endpoint, expected_result)
 @pytest.mark.parametrize("user_id", [1, 3, 5],
     ids=["user_1", "user_3", "user_5"]
 )
-def test_filter_posts_by_user(base_url, api_session, user_id):
+def test_filter_posts_by_user(api_base_url, api_session, user_id):
     response = api_session.get(
-        f"{base_url}/posts",
+        f"{api_base_url}/posts",
         params={"userId": user_id} )
     data = response.json()
 
@@ -415,12 +415,12 @@ def test_filter_posts_by_user(base_url, api_session, user_id):
         assert post["userId"] == user_id
 
 
-def test_posts_sorted_by_id(base_url, api_session):
+def test_posts_sorted_by_id(api_base_url, api_session):
     params = {
         "userId": 1
     }
 
-    response = api_session.get(f"{base_url}/posts", params=params)
+    response = api_session.get(f"{api_base_url}/posts", params=params)
     data = response.json()
 
     assert response.status_code == 200
@@ -435,8 +435,8 @@ def test_posts_sorted_by_id(base_url, api_session):
     assert sorted(id_list) == id_list
 
 
-def test_posts_have_unique_ids(base_url, api_session):
-    response = api_session.get(f"{base_url}/posts")
+def test_posts_have_unique_ids(api_base_url, api_session):
+    response = api_session.get(f"{api_base_url}/posts")
     data = response.json()
 
     assert response.status_code == 200
@@ -452,14 +452,14 @@ def test_posts_have_unique_ids(base_url, api_session):
     assert len(id_list) == len(set(id_list))
 
 
-def test_comment_references_existing_post(base_url, api_session):
-    response = api_session.get(f"{base_url}/comments/7")
+def test_comment_references_existing_post(api_base_url, api_session):
+    response = api_session.get(f"{api_base_url}/comments/7")
     data = response.json()
 
     assert response.status_code == 200
     assert "postId" in data
 
-    response2 = api_session.get(f"{base_url}/posts/{data['postId']}")
+    response2 = api_session.get(f"{api_base_url}/posts/{data['postId']}")
     data2 = response2.json()
     assert response2.status_code == 200
     assert "id" in data2
@@ -468,13 +468,13 @@ def test_comment_references_existing_post(base_url, api_session):
 
 
 
-def test_create_post_with_empty_title(base_url, api_session):
+def test_create_post_with_empty_title(api_base_url, api_session):
     payload = {
         "title": "",
         "body": "Some text",
         "userId": 1
     }
-    response = api_session.post(f"{base_url}/posts", json=payload)
+    response = api_session.post(f"{api_base_url}/posts", json=payload)
     data = response.json()
 
     assert isinstance(data, dict)
