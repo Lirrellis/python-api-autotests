@@ -28,6 +28,7 @@ def test_login(page, shop_url):
     page.locator("#password").fill("secret_sauce")
     page.locator("#login-button").click()
     page.wait_for_url("**/inventory.html")
+    expect(page.locator("[data-test=\"title\"]")).to_have_text("Products")
 
 
     # <input class="input_error form_input" placeholder="Username" aria-label="Username" data-test="username" id="user-name" autocorrect="off" autocapitalize="none" type="text" value="" name="user-name">
