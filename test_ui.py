@@ -3,6 +3,8 @@ import pytest
 import requests
 # import chromium
 from playwright.sync_api import expect
+from login_page import LoginPage
+from inventory_page import InventoryPage
 
 def test_open_page(page):
     page.goto("https://example.com")
@@ -23,10 +25,9 @@ def test_open_page(page):
 
 
 def test_login(page, shop_url):
-    page.goto(shop_url)
-    page.locator("#user-name").fill("standard_user")
-    page.locator("#password").fill("secret_sauce")
-    page.locator("#login-button").click()
+    login_page = LoginPage(page)
+    login_page.open(shop_url)
+    login_page.login("standard_user", "secret_sauce")
     page.wait_for_url("**/inventory.html")
     expect(page.locator("[data-test=\"title\"]")).to_have_text("Products")
 
@@ -46,17 +47,21 @@ def test_login_negative(page, shop_url, password, expected_error):
     expect(page.locator('[data-test="error"]')).to_have_text(expected_error)
     expect(page).to_have_url(shop_url)
 
-def test_inventory_items(page, shop_url):
-    page.goto(shop_url)
-    page.locator("#user-name").fill("standard_user")
-    page.locator("#password").fill("secret_sauce")
-    page.locator("#login-button").click()
-    page.wait_for_url("**/inventory.html")
-    expect(page.locator('[data-test="title"]')).to_have_text("Products")
-    # page.pause()
-    expect(page.locator('[data-test="inventory-item"]')).to_have_count(6)
-    expect(page.locator('[data-test="inventory-item-name"]').first).to_have_text("Sauce Labs Backpack")
-    for item in page.locator('[data-test="inventory-item-name"]').all():
+def test_inventory_items(logged_in_page):
+    inventory_page = InventoryPage(logged_in_page)
+
+    logged_in_page.wait_for_url("**/inventory.html")
+    expect(inventory_page.get_title()).to_have_text("Products")
+    expect(inventory_page.get_items()).to_have_count(6)
+    expect(inventory_page.get_item_names().first).to_have_text("Sauce Labs Backpack")
+    expect(inventory_page.get_prices().first).to_have_text("$29.99")
+    expect(inventory_page.get_prices()).to_have_count(6)
+    for item in inventory_page.get_item_names().all():
         name = item.inner_text()
         assert len(name.strip()) > 0
         print(name)
+
+    for item in inventory_page.get_prices().all():
+        price = item.inner_text()
+        price = float(price.replace("$", ""))
+        assert price > 0
